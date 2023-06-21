@@ -1,12 +1,13 @@
-#drosophila -ハエのゲノム情報の取得
+#download drosophila reference genome -ハエのゲノム情報の取得
 wget　https://ftp.ensembl.org/pub/release-90/fasta/drosophila_melanogaster/dna/Drosophila_melanogaster.BDGP6.dna.toplevel.fa.gz
 wget https://ftp.ensembl.org/pub/release-90/gtf/drosophila_melanogaster/Drosophila_melanogaster.BDGP6.90.gtf.gz
 gunzip both files
 
-#Put DM_ in front of the each chromosome number (to distinguish human and drosophila later) 
+#Put "DM_" in front of the each chromosome number (to distinguish human and drosophila reads later) 
 #drosophilaのfaファイルの染色体番号の先頭にDM_をつける(ヒトと区別するため)
 less Drosophila_melanogaster.BDGP6.dna.toplevel.fa | sed "s/^>/>DM_/g" > DM_Drosophila_melanogaster.BDGP6.dna.toplevel.fa
 
+#Create bed files to run bedtools intersect
 #referenceの染色体番号とそれの開始点と終了点のbedファイルの抽出
 #human
 awk -v OFS='\t' {'print $1,0,$2'} Homo_sapiens.GRCh38.dna.primary_assembly.fa.fai | awk BEGIN'{OFS="\t"}{chrom=$1; gsub(chrom,""chrom,$1)}{print $0}'> hg38_without_chr.bed
