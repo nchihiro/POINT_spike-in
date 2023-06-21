@@ -1,0 +1,50 @@
+#drosophila -ハエのゲノム情報の取得
+wget　https://ftp.ensembl.org/pub/release-90/fasta/drosophila_melanogaster/dna/Drosophila_melanogaster.BDGP6.dna.toplevel.fa.gz
+wget https://ftp.ensembl.org/pub/release-90/gtf/drosophila_melanogaster/Drosophila_melanogaster.BDGP6.90.gtf.gz
+gunzip both files
+
+
+#drosophilaのfaファイルの染色体番号の先頭にDM_をつける(ヒトと区別するため)
+less Drosophila_melanogaster.BDGP6.dna.toplevel.fa | sed "s/^>/>DM_/g" > DM_Drosophila_melanogaster.BDGP6.dna.toplevel.fa
+#referenceの染色体番号とそれの開始点と終了点のbedファイルの抽出
+awk -v OFS='\t' {'print $1,0,$2'} Homo_sapiens.GRCh38.dna.primary_assembly.fa.fai | awk BEGIN'{OFS="\t"}{chrom=$1; gsub(chrom,""chrom,$1)}{print $0}'> hg38_without_chr.bed
+
+awk -v OFS='\t' {'print $1,0,$2'} Drosophila_melanogaster.BDGP6.32.dna.toplevel.fa.gz.fai | awk BEGIN'{OFS="\t"}{chrom=$1; gsub(chrom,"DM_"chrom,$1)}{print $0}'> dm_without_chr.bed
+
+#reference　gtfの染色体番号にDMをつける
+cat Drosophila_melanogaster.BDGP6.90.gtf | awk -F "\t" '{OFS="\t"; sub(//, "DM_", $1); print }' > New_Drosophila_melanogaster.BDGP6.90.gtf
+
+#create STAR index of human and drosophila genome (humanとdrosophilaを混ぜたインデックスを作成する)
+STAR --runMode genomeGenerate \
+	--genomeDir ./hg38+dm_STAR_INDEX \
+	--genomeFastaFiles Homo_sapiens.GRCh38.dna.primary_assembly.fa DM_Drosophila_melanogaster.BDGP6.dna.toplevel.fa \
+	--limitGenomeGenerateRAM 50000000000 \
+	--runThreadN 10 \
+
+#map the reads on human + drosophila INDEX
+STAR --genomeDir /*/hg38+dm_STAR_INDEX \
+  --outSAMtype BAM SortedByCoordinate \
+  --runThreadN 20 \
+  --outFilterScoreMin 10 \
+  --readFilesCommand zcat \
+  --readFilesIn ./*/${m}_1_val_1.fq.gz  ./*/${m}_2_val_2.fq.gz \
+  --outFileNamePrefix /* \
+  --outFilterMultimapNmax 1 \
+  --limitBAMsortRAM 50000000000 \
+
+
+#Split the bam file into human and drosophila
+#human
+bedtools intersect -abam ./*/${m}Aligned.sortedByCoord.out.bam -b ./hg38_without_chr.bed -nonamecheck > ./*/hg38_${m}.bam
+#drosophila
+bedtools intersect -abam ./*/${m}Aligned.sortedByCoord.out.bam -b ./dm_without_chr.bed -nonamecheck > ./*/dm_${m}.bam
+
+
+#Count the read number for each genome
+#human
+featureCounts -p -t transcript -g gene_id -a Homo_sapiens.GRCh38.90.gtf -o ./*/t_hg38_${m}_counts.txt ./*/hg38_${m}.bam
+#drosophila
+featureCounts -p -t transcript -g gene_id -a New_Drosophila_melanogaster.BDGP6.90.gtf -o ./*/t_dm_${m}_counts.txt ./*/dm_${m}.bam
+
+
+
