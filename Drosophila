@@ -3,12 +3,14 @@ wget　https://ftp.ensembl.org/pub/release-90/fasta/drosophila_melanogaster/dna/
 wget https://ftp.ensembl.org/pub/release-90/gtf/drosophila_melanogaster/Drosophila_melanogaster.BDGP6.90.gtf.gz
 gunzip both files
 
-
+#Put DM_ in front of the each chromosome number (to distinguish human and drosophila later) 
 #drosophilaのfaファイルの染色体番号の先頭にDM_をつける(ヒトと区別するため)
 less Drosophila_melanogaster.BDGP6.dna.toplevel.fa | sed "s/^>/>DM_/g" > DM_Drosophila_melanogaster.BDGP6.dna.toplevel.fa
-#referenceの染色体番号とそれの開始点と終了点のbedファイルの抽出
-awk -v OFS='\t' {'print $1,0,$2'} Homo_sapiens.GRCh38.dna.primary_assembly.fa.fai | awk BEGIN'{OFS="\t"}{chrom=$1; gsub(chrom,""chrom,$1)}{print $0}'> hg38_without_chr.bed
 
+#referenceの染色体番号とそれの開始点と終了点のbedファイルの抽出
+#human
+awk -v OFS='\t' {'print $1,0,$2'} Homo_sapiens.GRCh38.dna.primary_assembly.fa.fai | awk BEGIN'{OFS="\t"}{chrom=$1; gsub(chrom,""chrom,$1)}{print $0}'> hg38_without_chr.bed
+#drosophila
 awk -v OFS='\t' {'print $1,0,$2'} Drosophila_melanogaster.BDGP6.32.dna.toplevel.fa.gz.fai | awk BEGIN'{OFS="\t"}{chrom=$1; gsub(chrom,"DM_"chrom,$1)}{print $0}'> dm_without_chr.bed
 
 #reference　gtfの染色体番号にDMをつける
@@ -21,7 +23,7 @@ STAR --runMode genomeGenerate \
 	--limitGenomeGenerateRAM 50000000000 \
 	--runThreadN 10 \
 
-#map the reads on human + drosophila INDEX
+#map the reads on human + drosophila INDEX (named as hg38+dm_STAR_INDEX previously)
 STAR --genomeDir /*/hg38+dm_STAR_INDEX \
   --outSAMtype BAM SortedByCoordinate \
   --runThreadN 20 \
