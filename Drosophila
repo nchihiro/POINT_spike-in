@@ -3,8 +3,8 @@ wget　https://ftp.ensembl.org/pub/release-90/fasta/drosophila_melanogaster/dna/
 wget https://ftp.ensembl.org/pub/release-90/gtf/drosophila_melanogaster/Drosophila_melanogaster.BDGP6.90.gtf.gz
 gunzip both files
 
-#Put "DM_" in front of the each chromosome number (to distinguish human and drosophila reads later) on fa files
-#drosophilaのfaファイルの染色体番号の先頭にDM_をつける(ヒトと区別するため)
+#####Put "DM_" in front of the each chromosome number (to distinguish human and drosophila reads later) of drosophila fa files
+#####drosophilaのfaファイルの染色体番号の先頭にDM_をつける(ヒトと区別するため)
 less Drosophila_melanogaster.BDGP6.dna.toplevel.fa | sed "s/^>/>DM_/g" > DM_Drosophila_melanogaster.BDGP6.dna.toplevel.fa
 
 #Create bed files to run bedtools intersect
@@ -14,7 +14,7 @@ awk -v OFS='\t' {'print $1,0,$2'} Homo_sapiens.GRCh38.dna.primary_assembly.fa.fa
 #drosophila
 awk -v OFS='\t' {'print $1,0,$2'} Drosophila_melanogaster.BDGP6.32.dna.toplevel.fa.gz.fai | awk BEGIN'{OFS="\t"}{chrom=$1; gsub(chrom,"DM_"chrom,$1)}{print $0}'> dm_without_chr.bed
 
-#reference　gtfの染色体番号にDM_をつける
+#Put "DM_" in front of the each chromosome number of drosophila reference　gtf
 cat Drosophila_melanogaster.BDGP6.90.gtf | awk -F "\t" '{OFS="\t"; sub(//, "DM_", $1); print }' > New_Drosophila_melanogaster.BDGP6.90.gtf
 
 #create STAR index of human and drosophila genome (humanとdrosophilaを混ぜたインデックスを作成する)
